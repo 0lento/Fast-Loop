@@ -31,60 +31,59 @@ def draw_points(points, color=(1.0, 1.0, 0.0, 1), size=3.0, occlude=True):
 
 def draw_line_loop(points, line_color=(0.0, 1.0, 0.5, 0.9), line_width=1.0):
     ui_scale = ui.get_ui_scale()
-
     r, g, b, a = line_color
+
     if common.prefs().occlude_lines:
         gpu.state.depth_test_set('LESS_EQUAL')
 
     gpu.state.blend_set('ALPHA') if a < 1 else gpu.state.blend_set('NONE')
-    gpu.state.line_width_set(line_width)
-    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-    batch = batch_from_points(points, 'LINE_LOOP', shader)
+
+    shader = gpu.shader.from_builtin('POLYLINE_SMOOTH_COLOR')
+    batch = batch_for_shader(shader, 'LINE_LOOP', {"pos": points, "color": [line_color] * len(points)})
     
     shader.bind()
-    color = shader.uniform_from_name("color")
-    shader.uniform_vector_float(color, pack("4f", r, g, b, a), 4)
+    shader.uniform_float("lineWidth", line_width * ui_scale)
+    shader.uniform_float("viewportSize", (bpy.context.area.width, bpy.context.area.height))
     batch.draw(shader)
 
     gpu.state.depth_test_set('NONE')
+    gpu.state.blend_set('NONE')
 
 def draw_line(points, line_color=(0.0, 1.0, 0.5, 0.9), line_width=1.0):
     ui_scale = ui.get_ui_scale()
-
-    r, g, b, a = line_color
+    a = line_color[3]
 
     if common.prefs().occlude_lines:
         gpu.state.depth_test_set('LESS_EQUAL')
 
     gpu.state.blend_set('ALPHA') if a < 1 else gpu.state.blend_set('NONE')
-    gpu.state.line_width_set(line_width)
-    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-    batch = batch_from_points(points, 'LINE_STRIP', shader)
+
+    shader = shader = gpu.shader.from_builtin('POLYLINE_SMOOTH_COLOR')
+    batch = batch_for_shader(shader, 'LINE_STRIP', {"pos": points, "color": [line_color] * len(points)})
     
     shader.bind()
-    color = shader.uniform_from_name("color")
-    
-    shader.uniform_vector_float(color, pack("4f", r, g, b, a), 4)
+    shader.uniform_float("lineWidth", line_width * ui_scale)
+    shader.uniform_float("viewportSize", (bpy.context.area.width, bpy.context.area.height))
+
     batch.draw(shader)
 
     gpu.state.depth_test_set('NONE')
 
 def draw_lines(points, line_color=(0.0, 1.0, 0.5, 0.4), line_width=1.0):
-    indices = [(i, i+1) for i in range(0, len(points)-1)]
     ui_scale = ui.get_ui_scale()
-    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-    batch = batch_for_shader(shader, 'LINES', {"pos": points}, indices=indices)
+    shader = gpu.shader.from_builtin('POLYLINE_SMOOTH_COLOR')
+    batch = batch_for_shader(shader, 'LINE_STRIP', {"pos": points, "color": [line_color] * len(points)})
     
     shader.bind()
-    color = shader.uniform_from_name("color")
     r, g, b, a = line_color
 
     if common.prefs().occlude_lines:
         gpu.state.depth_test_set('LESS_EQUAL')
 
     gpu.state.blend_set('ALPHA') if a < 1 else gpu.state.blend_set('NONE')
-    gpu.state.line_width_set(line_width)
-    shader.uniform_vector_float(color, pack("4f", r, g, b, a), 4)
+
+    shader.uniform_float("lineWidth", line_width * ui_scale)
+    shader.uniform_float("viewportSize", (bpy.context.area.width, bpy.context.area.height))
     batch.draw(shader)
 
     gpu.state.depth_test_set('NONE')
